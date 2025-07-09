@@ -30,7 +30,6 @@ Toko.ai/
   - Animated backgrounds & modern design
   - Error boundaries for smooth UX
   - WebRTC video/audio calls
-  - 3D Interactive Globe 🌍
 
 ### Key Files & Folders
 - `client/src/App.tsx` – Main app logic
