@@ -7,7 +7,7 @@ Welcome to **Toko** – a modern, real-time chat app with global matchmaking, vi
 ## 🌐 Project Structure
 
 ```
-Toko-Prefinal-1-main/
+Toko.ai/
 │
 ├── client/         # Frontend (React + Vite)
 ├── server/         # Backend (Node.js + Fastify)
