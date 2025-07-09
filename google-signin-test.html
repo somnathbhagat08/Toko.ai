@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Google Sign-In Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      min-height: 100px;
+      white-space: pre-wrap;
+    }
+    button {
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    button:hover {
+      background-color: #357ae8;
+    }
+    .origins {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #fffde7;
+    }
+    h3 {
+      margin-top: 30px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Google Sign-In Test Page</h1>
+    <p>This page tests Google Sign-In with your client ID to verify if your origin is properly configured.</p>
+    
+    <h3>Current Origin Information</h3>
+    <div id="origin-info">Loading...</div>
+    
+    <h3>Test Google Sign-In</h3>
+    <button id="sign-in">Test Google Sign-In</button>
+    <div id="google-signin-container"></div>
+    
+    <h3>Test Result</h3>
+    <div class="result" id="result">No test run yet</div>
+    
+    <div class="origins">
+      <h3>Authorized JavaScript Origins</h3>
+      <p>The following origins should be added to your Google Cloud Console:</p>
+      <ul id="origin-list"></ul>
+      <p><strong>Client ID:</strong> 1073237357352-7ngur8kmp8vftgfkbu3p5fnvtrdb9kng.apps.googleusercontent.com</p>
+    </div>
+  </div>
+
+  <script>
+    // Display origin information
+    document.addEventListener('DOMContentLoaded', function() {
+      const originInfo = document.getElementById('origin-info');
+      const origin = window.location.origin;
+      const hostname = window.location.hostname;
+      const port = window.location.port;
+      const protocol = window.location.protocol;
+      
+      originInfo.innerHTML = `
+        <strong>Origin:</strong> ${origin}<br>
+        <strong>Protocol:</strong> ${protocol}<br>
+        <strong>Hostname:</strong> ${hostname}<br>
+        <strong>Port:</strong> ${port || '(default)'}<br>
+      `;
+      
+      // Generate list of potential origins to authorize
+      const originList = document.getElementById('origin-list');
+      const origins = [
+        origin,
+        'http://localhost:5000',
+        'http://localhost:5001',
+        'http://localhost:3000',
+        'http://127.0.0.1:5000',
+        'http://127.0.0.1:5001',
+        'http://127.0.0.1:3000'
+      ];
+      
+      origins.forEach(o => {
+        const li = document.createElement('li');
+        li.textContent = o;
+        if (o === origin) {
+          li.style.fontWeight = 'bold';
+          li.textContent += ' (current)';
+        }
+        originList.appendChild(li);
+      });
+    });
+    
+    // Handle Google Sign-In
+    function handleCredentialResponse(response) {
+      const resultElement = document.getElementById('result');
+      resultElement.textContent = 'Google Sign-In successful!\nCredential received: ' + 
+        response.credential.substring(0, 20) + '...\n\n' +
+        'This confirms your origin is properly registered in Google Cloud Console.';
+      resultElement.style.backgroundColor = '#e8f5e9';
+    }
+    
+    function handleSignInError(error) {
+      const resultElement = document.getElementById('result');
+      resultElement.textContent = 'Google Sign-In error: ' + JSON.stringify(error, null, 2);
+      resultElement.style.backgroundColor = '#ffebee';
+    }
+    
+    // Initialize Google Sign-In
+    window.onload = function() {
+      const CLIENT_ID = '1073237357352-7ngur8kmp8vftgfkbu3p5fnvtrdb9kng.apps.googleusercontent.com';
+      
+      // Add Google Sign-In script
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+      
+      script.onload = function() {
+        if (window.google && window.google.accounts) {
+          window.google.accounts.id.initialize({
+            client_id: CLIENT_ID,
+            callback: handleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true
+          });
+          
+          document.getElementById('result').textContent = 
+            'Google Sign-In API loaded successfully. This means the script can be loaded from your origin.\n\n' + 
+            'Click "Test Google Sign-In" to verify if your origin is authorized.';
+          
+          // Set up the test button
+          document.getElementById('sign-in').addEventListener('click', function() {
+            try {
+              window.google.accounts.id.prompt(notification => {
+                if (notification.isNotDisplayed()) {
+                  const reason = notification.getNotDisplayedReason();
+                  document.getElementById('result').textContent = 
+                    `Error: Google Sign-In prompt not displayed.\nReason: ${reason}\n\n` +
+                    `If the reason is "unregistered_origin", you need to add ${window.location.origin} ` +
+                    `to the authorized JavaScript origins in your Google Cloud Console.`;
+                  document.getElementById('result').style.backgroundColor = '#ffebee';
+                } else if (notification.isSkippedMoment()) {
+                  document.getElementById('result').textContent = 
+                    `Google Sign-In prompt was skipped.\nReason: ${notification.getSkippedReason()}`;
+                  document.getElementById('result').style.backgroundColor = '#fff3e0';
+                }
+              });
+            } catch (error) {
+              handleSignInError(error);
+            }
+          });
+        } else {
+          document.getElementById('result').textContent = 
+            'Error: Google Sign-In API not available. Check if the script was loaded correctly.';
+          document.getElementById('result').style.backgroundColor = '#ffebee';
+        }
+      };
+      
+      script.onerror = function() {
+        document.getElementById('result').textContent = 
+          'Error: Failed to load Google Sign-In API script.';
+        document.getElementById('result').style.backgroundColor = '#ffebee';
+      };
+    };
+  </script>
+</body>
+</html>

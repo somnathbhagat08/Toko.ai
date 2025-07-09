@@ -1,0 +1,309 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: toko
+---
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: toko-config
+  namespace: toko
+data:
+  NODE_ENV: "production"
+  REDIS_URL: "redis://redis-service:6379"
+---
+# Secret for sensitive data
+apiVersion: v1
+kind: Secret
+metadata:
+  name: toko-secrets
+  namespace: toko
+type: Opaque
+data:
+  # Base64 encoded values - replace with actual secrets
+  MONGODB_URI: ""
+  SESSION_SECRET: ""
+  GRAFANA_PASSWORD: ""
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: toko
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        command: ["redis-server", "--appendonly", "yes"]
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-pvc
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: toko
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+---
+# Redis PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: toko
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# Toko Application Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: toko-app
+  namespace: toko
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: toko-app
+  template:
+    metadata:
+      labels:
+        app: toko-app
+    spec:
+      containers:
+      - name: toko
+        image: toko:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: toko-config
+              key: NODE_ENV
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: toko-config
+              key: REDIS_URL
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: toko-secrets
+              key: MONGODB_URI
+        - name: SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: toko-secrets
+              key: SESSION_SECRET
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+---
+# Toko Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: toko-service
+  namespace: toko
+spec:
+  selector:
+    app: toko-app
+  ports:
+  - port: 80
+    targetPort: 5000
+  type: ClusterIP
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: toko-hpa
+  namespace: toko
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: toko-app
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+# NGINX Load Balancer
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-lb
+  namespace: toko
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-lb
+  template:
+    metadata:
+      labels:
+        app: nginx-lb
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+---
+# NGINX ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: toko
+data:
+  nginx.conf: |
+    events {
+        worker_connections 1024;
+    }
+    http {
+        upstream toko_backend {
+            server toko-service:80;
+        }
+        server {
+            listen 80;
+            location / {
+                proxy_pass http://toko_backend;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            }
+        }
+    }
+---
+# NGINX Service (Load Balancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: toko
+spec:
+  selector:
+    app: nginx-lb
+  ports:
+  - port: 80
+    targetPort: 80
+  type: LoadBalancer
+---
+# Network Policy for security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: toko-network-policy
+  namespace: toko
+spec:
+  podSelector:
+    matchLabels:
+      app: toko-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: nginx-lb
+  - ports:
+    - protocol: TCP
+      port: 5000
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+  - ports:
+    - protocol: TCP
+      port: 6379
