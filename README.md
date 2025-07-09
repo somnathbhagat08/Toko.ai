@@ -1,122 +1,122 @@
-# Toko Chat Application
+🌐✨ Toko Chat Application
+A real-time 💬 chat platform featuring intelligent matchmaking 🤝, seamless WebRTC video calls 🎥, and a global user visualization 🌍.
 
-A real-time chat application with matchmaking, WebRTC video calling, and global user visualization.
+🚀 Getting Started
+✅ Prerequisites
+Ensure you have the following installed:
 
-## Getting Started
+Node.js v18+ 🟢
 
-### Prerequisites
+npm v8+ 📦
 
-- Node.js v18 or higher
-- npm v8 or higher
+⚙️ Setup & Installation
+Clone the repository
 
-### Setup and Installation
+bash
+Copy
+Edit
+git clone https://github.com/your-username/toko-chat-app.git
+cd toko-chat-app
+Install dependencies
 
-1. Clone the repository
-2. Install dependencies:
-
-```bash
+bash
+Copy
+Edit
 npm install
-```
+🧪 Development Mode
+The app includes a backend 🧠 and frontend 🎨. You can run them together or separately.
 
-### Development Mode
+🔁 Option 1: Start Both (Windows Only)
+Run the batch file to launch both servers in two terminals:
 
-The application consists of a backend server and a frontend client. You can run them separately or together.
-
-#### Option 1: Start both client and server (Windows)
-
-For Windows users, a batch file is included to start both servers simultaneously:
-
-```bash
-# Simply run the batch file
+bash
+Copy
+Edit
 start-dev.bat
-```
+✅ This starts:
 
-This will open two terminal windows, one for the backend server and one for the frontend dev server.
+Backend API: http://localhost:5000
 
-#### Option 2: Start services separately
+Frontend UI: http://localhost:5173
 
+🛠️ Option 2: Start Services Separately
 Start the backend server:
 
-```bash
+bash
+Copy
+Edit
 npm run dev:server
-```
+Start the frontend server:
 
-In another terminal, start the frontend development server:
-
-```bash
+bash
+Copy
+Edit
 npm run dev:client
-```
+🌟 Features
+⚡ Real-time chat with WebSocket
 
-### Accessing the Application
+🤖 Smart user matchmaking
 
-- Backend API: http://localhost:5000
-- Frontend UI: http://localhost:5173
+🌐 3D globe showing online users
 
-## Features
+📹 WebRTC video & audio calls
 
-- Real-time chat with WebSocket communication
-- User matchmaking for random connections
-- Global user visualization with 3D globe
-- WebRTC video and audio calling
-- User authentication and account management
-- Real-time presence tracking
+🔐 Authentication & account management
 
-## Development Notes
+👀 Real-time user presence tracking
 
-### Environment Variables
+📁 Environment Variables
+Create a .env file and include the following as needed:
 
-The application supports the following environment variables:
+Variable	Description
+NODE_ENV	development or production
+DATABASE_URL	PostgreSQL connection string 🌐
+REDIS_URL	Redis connection string 🧠
+JWT_SECRET	JWT secret for secure auth 🔐
+CORS_ORIGIN	Allowed origins (comma-separated) 🌍
 
-- `NODE_ENV`: Application environment (`development` or `production`)
-- `DATABASE_URL`: PostgreSQL connection string
-- `REDIS_URL`: Redis connection string
-- `JWT_SECRET`: Secret for JWT token signing
-- `CORS_ORIGIN`: Comma-separated list of allowed origins
+🛢️ Database Setup
+🏆 Recommended: PostgreSQL for production
 
-### Database
+🧪 Development: In-memory fallback when no DATABASE_URL
 
-The application can work with:
+🔒 Note: In-memory mode requires fresh user registration each time.
 
-1. PostgreSQL (recommended for production)
-2. In-memory storage (fallback when no DATABASE_URL is provided)
+👥 Default Users
+➡️ No default users are included. You must register manually during first use (especially in-memory).
 
-### Default User Accounts
+🧩 Troubleshooting
+❌ Login or Registration Not Working?
+✅ Check backend logs for errors
 
-When running with in-memory storage, you need to register a new account.
+✅ Double-check credentials
 
-## Troubleshooting
+✅ Make sure backend is running
 
-### Login or Registration Issues
+✅ Inspect browser console (F12 → Network tab)
 
-If you encounter login or registration issues:
+❌ WebSocket Issues?
+✅ Confirm backend is running
 
-1. Check the backend console for error logs
-2. Verify that you're using the correct credentials
-3. Make sure the backend server is running
-4. Check browser console for network errors
+✅ Check for WebSocket errors in the console
 
-### WebSocket Connection Issues
+✅ Verify proxy settings in vite.config.ts
 
-If real-time features aren't working:
+🔧 Common Fixes
+🛠️ Transform failed with 1 error
+Check for syntax issues in TypeScript files (missing brackets, etc.)
 
-1. Verify that the backend server is running
-2. Check browser console for WebSocket connection errors
-3. Ensure that the proxy configuration is correct in vite.config.ts
+Rename or fix invalid variable references
 
-### Common Error Solutions
+Restart the server after fixing
 
-#### "Transform failed with 1 error"
-If you see an error message related to a transform error or syntax error in TypeScript files:
-1. Check the specified file for syntax errors such as missing or extra brackets
-2. Fix any referenced variables that might have been renamed (e.g., `monitoring` → `monitoringService`)
-3. Restart the server after making changes
+🔐 "Authentication failed"
+Ensure credentials are correct
 
-#### "Authentication failed" when logging in
-1. Make sure you're using the correct credentials
-2. Check if the user already exists in the system
-3. Look for backend logs that might explain the authentication failure
-4. Try registering a new account if login consistently fails
+Confirm user exists (or register again)
 
-## License
+See backend logs for detailed errors
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+📄 License
+This project is licensed under the MIT License 📜
+See LICENSE for details.
