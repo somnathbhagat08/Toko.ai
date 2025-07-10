@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { storage } from '../storage.js';
 import { redisManager } from '../redis.js';
 import { monitoringService } from '../monitoring-fixed.js';

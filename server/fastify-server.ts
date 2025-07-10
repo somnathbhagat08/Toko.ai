@@ -5,7 +5,7 @@ import websocket from '@fastify/websocket';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
 import { storage } from './storage.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { log } from './vite.js';
 
 // Extend session type
